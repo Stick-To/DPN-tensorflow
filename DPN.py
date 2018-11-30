@@ -216,7 +216,13 @@ class DPN:
             axes = 3 if self.data_format == 'channels_last' else 1
             dense_layers = []
             dpn = bottom
-            shortcut = self._bn_activation_conv(bottom, filters[2], 1, strides)
+            project = self._bn_activation_conv(bottom, filters[2]+2*k, 1, strides)
+            if self.data_format == 'channels_last':
+                shortcut = project[:, :, :, :filters[2]]
+                dense_layers.append(project[:, :, :, filters[2]:])
+            else:
+                shortcut = project[:, :filters[2], :, :]
+                dense_layers.append(project[:, filters[2]:, :, :])
             for i in range(blocks):
                 dpn = self._bn_activation_conv(dpn, filters[0], 1, 1)
                 dpn = self._group_conv(dpn, filters[1], 3, strides if i == 0 else 1)
